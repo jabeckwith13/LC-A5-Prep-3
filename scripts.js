@@ -6,15 +6,23 @@
 
 /** GLOBAL VARIABLES **/
 // TODO: initialize three empty arrays (see Part A, 2)
+categories = [];
+allDrinks = [];
+currentDrinks = [];
 
 let colorClasses = {
     // TODO: add properties relating drink type with CSS class (see Part B, 6)
+    "alcoholic" = "alcohol",
+    "non alcoholic" = "no-alcohol",
+    "optional alcohol" = "optional"
 }
 
 /** WINDOW LOAD LISTENER **/
 window.addEventListener("load", function() {
     // TODO: call fetch function for drinks (see Part A, 3)
+    fetchDrinks();
     // Note: init() should be called at the end of fetchCategories() to make sure fetched data has returned from the API before the page is rendered. Each fetch function is chained to another this way.
+
 });
 
 /** MAIN FUNCTION **/
@@ -25,62 +33,128 @@ function init() {
     // FORM
     // TODO: Add searchArea object (see Part D, 2a)
     // TODO: Add keywordInput, categoryInput, submitButton, and resetButton (see Part B, 1a)
-
+    const keywordInput = document.getElementById("keyword-input");
+    const categoryInput = document.getElementById("category-input");
+    const submitButton = document.getElementById("submit-button");
+    const resetButton = document.getElementById("reset-button");
     // BELOW FORM
     // TODO: Add resultsArea object (see Part D, 2a)
     // TODO: Add searchResults, noResults, and noResultsText (see Part B, 1b)
+    const searchResults = document.getElementById("search-results");
+    const noResults = document.getElementById("no-results");
+    const noResultsText = document.getElementById("no-results-text");
     // TODO: Add emptyGlass object (see Part D, 2a)
+    const emptyGlass = document.getElementById("empty-glass");
 
     /** POPULATE DROPDOWN INPUT WITH FETCHED DATA **/
     // TODO: Set innerHTML of dropdown box (see Part B, 2)
-
+    categoryInput.innerHTML = setCategoryOptions();
     // TODO: Copy in initial triggers for animations (see Part D, 2c)
+    fadeInSearchBox();
+    fadeInResultsArea();
+    spinGlass("zoom");
+    
 
     /** LISTEN FOR EVENTS **/
-    submitButton.addEventListener("click", () => {    
+    submitButton.addEventListener("click", (event) => {    
         // TODO: Add typeInput object to get the clicked radio button (see Part B, 3a)
+        let typeInput = document.querySelector("input[name=type-input]:checked")
         // TODO: Validate the type and keyword inputs (see Part B, 5)
-        // TODO: Call the handler function (see Part B, 3c)
+        if (typeInput === null) {
+            alert("\nPlease select alcoholic, non-alcoholic, or both.")
+        } else if (keywordInput.value !== "" && !keywordInput.value.trim().match(/^[A-Za-z0-9\-]+$/)) {
+            alert("\nPlease enter a single keyword with only letters, numbers, and hyphens.")
+        } else () {
+            // TODO: Call the handler function (see Part B, 3c)
+            handleSubmitClick(typeInput.value);
+        }
         // TODO: Prevent the default page reload (see Part B, 3d)
+        event.preventDefault();
     });
 
     resetButton.addEventListener("click", () => {
-        // TODO: Change the value of noResultsText and call the handler for the reset button depending on the value of currentDrinks (see Part B, 4b) 
+        // TODO: Change the value of noResultsText and call the handler for the reset button depending on the value of currentDrinks (see Part B, 4b)
         // TODO: Add spinGlass("click") to the condition that currentDrinks is empty (see Part D, 2d)
+        if (currentDrinks.length>0){
+            handleResetClick()
+        } else {
+            spinGlass("click");
+        }
     });
+    emptyGlass.addEventListener("click", () => {
+        spinGlass("click");
+    });
+
 
     // TODO: Add listener for empty glass image (see Part D, 2e)
 
     /** HANDLE SOME OF THE LOGIC FOR EVENT LISTENERS **/
     function handleSubmitClick(type) {       
         // TODO: Call the resetResultsArea() function (see Part D, 2f)
+        // Temporarily hide everything below form and remove animation
+        resetResultsArea();
         // TODO: Give currentDrinks all of the objects from allDrinks (see Part B, 3b-1)
-        // TODO: Call filterDrinks and pass in the three input values (see Part B, 3b-2)     
+        currentDrinks = allDrinks.slice(0)
+        // TODO: Call filterDrinks and pass in the three input values (see Part B, 3b-2)
+         filterDrinks(type, categoryInput.value, keywordInput);
+        
         if (currentDrinks.length > 0) {
             // TODO: alphabetize results by name of drink - see sort function at bottom (see Part B, 3b-3)
-            
+            sortByName(currentDrinks, 0, currentDrinks.length-1);
             // Update values
+            searchResults.innerHTML = setRecipeCards();
+            noResults.style.display = "none";
             // TODO: add the recipe cards to the innerHTML of searchResults
             // TODO: change the value of 'display' for noResults to hide it
             
             // Trigger animations
             // TODO: Add setTimeout function with fadeInResultsArea() (see Part D, 2f)
+            setTimeout(() => {         
+                fadeInResultsArea();
+            }, 150); // Slight delay to accommodate image loading
         } else {
             // Update values
+            noResultsText.innerHTML = "No results found. Try again!"
             // TODO: Change the value of the innerHTML for noResultsText (see Part B, 3b-3)
             // Trigger animations
-            // TODO: Call handleResetClick() (see Part D, 2f)         
+            // TODO: Call handleResetClick() (see Part D, 2f) 
+            handleResetClick();        
         }
     };
     function handleResetClick() { 
         // Update values
         // TODO: Reset currentDrinks, searchResults, and noResults (see Part B, 4a, 2-4) 
+        currentDrinks = [];
+        searchResults.style.display = "none";
+        noResultsText.innerHTML = "Ready for a new seearch!";
+        noResults.style.display = "block";
         // Trigger animations
         // TODO: Call three functions (see Part D, 2g)
+        resetResultsArea(); 
+        fadeInResultsArea();
+        spinGlass("zoom");
     };
 
     // TODO: Add animation trigger functions (see Part D, 2b)
-
+    function fadeInSearchBox() {
+        searchArea.style.display = "block";
+        searchArea.style.animation = "fade-in 3s";
+    };
+    function resetResultsArea() {
+        resultsArea.style.display = "none";
+        resultsArea.style.animation = "none";   
+    };
+    function fadeInResultsArea() {
+        resultsArea.style.display = "block";
+        resultsArea.style.animation = "fade-in 2s";
+    };
+    function spinGlass(mode) {
+        emptyGlass.style.animation = (mode === "zoom" ? "zoom-spin 2s" : "spin-only 1.5s");
+        let spin = emptyGlass.getAnimations()[0];
+        spin.finish();
+        spin.play();
+        emptyGlass.style.animation = "none";
+    };
 } // End of init()
 
 
